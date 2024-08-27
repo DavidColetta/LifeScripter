@@ -25,4 +25,10 @@
     <ProjectReference Include="..\MoonSharpMod\MoonSharpMod.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="fonts\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
