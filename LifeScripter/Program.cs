@@ -1,6 +1,9 @@
-﻿using SadConsole.Configuration;
+﻿using MoonSharp.Interpreter;
+using SadConsole.Configuration;
 
 Settings.WindowTitle = "Life Scripter";
+
+UserData.RegisterAssembly();
 
 Builder gameStartup = new Builder()
     .SetScreenSize(GameSettings.GAME_WIDTH, GameSettings.GAME_HEIGHT)
