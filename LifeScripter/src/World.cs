@@ -6,9 +6,9 @@ namespace LifeScripter.Backend;
 
 class World
 {
-    private ScreenSurface _screenSurface;
+    private readonly ScreenSurface _screenSurface;
 
-    private EntityManager entities;
+    private readonly EntityManager entities;
 
     public ScreenSurface SurfaceObject => _screenSurface;
     public GameObject? UserControlledObject { get; set; }
@@ -60,8 +60,11 @@ class World
         Cell cNoReproduce = new Cell(scriptNoReproduce, _screenSurface.Surface.Area.Center + (0, 10), this);
         AddEntity(new CellObject(cNoReproduce, this));
 
-        for (int i = 0; i < 100; i++) {
-            Point pos = GetRandomPosition(mapWidth, mapHeight);
+        //Spawn food
+        int mapArea = Width * Height;
+        int numFoodToSpawn = (int)(mapArea * 0.01);
+        for (int i = 0; i < numFoodToSpawn; i++) {
+            Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
                 AddEntity(new FoodObject(30, pos, this));
             }
@@ -77,9 +80,16 @@ class World
     public void Tick() {
         OnTick?.Invoke();
 
-        // if (Game.Instance.Random.NextDouble() < 0.5) {
-            AddEntity(new FoodObject(30, GetRandomPosition(Width, Height), this));
-        // }
+
+        //Spawn food
+        int mapArea = Width * Height;
+        int numFoodToSpawn = (int)(mapArea * 0.00005);
+        for (int i = 0; i < numFoodToSpawn; i++) {
+            Point pos = GetRandomPosition(Width, Height);
+            if (IsEmpty(pos)) {
+                AddEntity(new FoodObject(30, pos, this));
+            }
+        }
     }
 
     public bool IsInBounds(Point position) {
@@ -112,6 +122,10 @@ class World
     public static Point GetRandomPosition(int width, int height)
     {
         return (Game.Instance.Random.Next(0, width), Game.Instance.Random.Next(0, height));
+    }
+
+    public void MoveScreen(Point delta) {
+        _screenSurface.Position += delta;
     }
 
     private void FillBackground()

@@ -13,8 +13,8 @@ class Cell
     public readonly ColoredGlyph Appearance;
     public Point Position { get; private set; }
     //Cell variables
-    static int SIGHT_DISTANCE = 20;
-    static int MAX_ENERGY = 200;
+    static int SIGHT_DISTANCE = 14;
+    static int MAX_ENERGY = 300;
     World world;
     public bool IsAlive = false;
     bool exhausted = true;
@@ -67,10 +67,10 @@ class Cell
         memory["getEnergy"] = (Func<int>)GetEnergy;
 
         memory["directions"] = new Table(script) {
-            ["north"] = Direction.North,
-            ["east"] = Direction.East,
-            ["south"] = Direction.South,
-            ["west"] = Direction.West
+            ["north"] = Direction.NORTH,
+            ["east"] = Direction.EAST,
+            ["south"] = Direction.SOUTH,
+            ["west"] = Direction.WEST
         };
         memory["look"] = (Func<Direction, Table>)Look;
         memory["move"] = (Func<Direction, bool>)Move;
@@ -114,16 +114,16 @@ class Cell
         Point lookPositioin = Position;
         for (int i = 0; i < SIGHT_DISTANCE; i++) {
             switch (direction) {
-                case Direction.North:
+                case Direction.NORTH:
                     lookPositioin += (0, -1);
                     break;
-                case Direction.East:
+                case Direction.EAST:
                     lookPositioin += (1, 0);
                     break;
-                case Direction.South:
+                case Direction.SOUTH:
                     lookPositioin += (0, 1);
                     break;
-                case Direction.West:
+                case Direction.WEST:
                     lookPositioin += (-1, 0);
                     break;
                 default:
@@ -157,16 +157,16 @@ class Cell
         }
         Point newPosition = Position;
         switch (direction) {
-            case Direction.North:
+            case Direction.NORTH:
                 newPosition += (0, -1);
                 break;
-            case Direction.East:
+            case Direction.EAST:
                 newPosition += (1, 0);
                 break;
-            case Direction.South:
+            case Direction.SOUTH:
                 newPosition += (0, 1);
                 break;
-            case Direction.West:
+            case Direction.WEST:
                 newPosition += (-1, 0);
                 break;
             default:
@@ -189,16 +189,16 @@ class Cell
     public bool Eat(Direction direction) {
         Point newPosition = Position;
         switch (direction) {
-            case Direction.North:
+            case Direction.NORTH:
                 newPosition += (0, -1);
                 break;
-            case Direction.East:
+            case Direction.EAST:
                 newPosition += (1, 0);
                 break;
-            case Direction.South:
+            case Direction.SOUTH:
                 newPosition += (0, 1);
                 break;
-            case Direction.West:
+            case Direction.WEST:
                 newPosition += (-1, 0);
                 break;
             default:
@@ -230,16 +230,16 @@ class Cell
         }
         Point newPosition = Position;
         switch (direction) {
-            case Direction.North:
+            case Direction.NORTH:
                 newPosition += (0, -1);
                 break;
-            case Direction.East:
+            case Direction.EAST:
                 newPosition += (1, 0);
                 break;
-            case Direction.South:
+            case Direction.SOUTH:
                 newPosition += (0, 1);
                 break;
-            case Direction.West:
+            case Direction.WEST:
                 newPosition += (-1, 0);
                 break;
             default:
@@ -261,10 +261,10 @@ class Cell
     }
 
     public enum Direction {
-        North = 0,
-        East = 1,
-        South = 2,
-        West = 3
+        NORTH = 0,
+        EAST = 1,
+        SOUTH = 2,
+        WEST = 3
     }
 
     public static ColoredGlyph GetAppearanceFromHashedScript(Script s) {
