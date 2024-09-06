@@ -2,8 +2,6 @@ using System.Diagnostics;
 using MoonSharp.Interpreter;
 using SadConsole.Entities;
 
-namespace LifeScripter.Backend;
-
 class World
 {
     private readonly ScreenSurface _screenSurface;
@@ -11,9 +9,9 @@ class World
     private readonly EntityManager entities;
 
     public ScreenSurface SurfaceObject => _screenSurface;
-    public GameObject? UserControlledObject { get; set; }
+    public EntityObject? UserControlledObject { get; set; }
 
-    public GameObject?[,] grid;
+    public WorldObject?[,] grid;
 
     public int Width => _screenSurface.Surface.Width;
     public int Height => _screenSurface.Surface.Height;
@@ -30,7 +28,7 @@ class World
 
         FillBackground();
 
-        grid = new GameObject[mapWidth, mapHeight];
+        grid = new WorldObject[mapWidth, mapHeight];
 
         for (int i = 0; i < TICKS_PER_SECOND; i++)
         {
@@ -43,11 +41,11 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0));
+        Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0), this);
         c.ticksPerSecond = 1;
-        AddEntity(new CellObject(c, this));
+        AddEntity(new CellEntity(c));
         Cell child = new Cell(c, c.Position + (0, -10));
-        AddEntity(new CellObject(child, this));
+        AddEntity(new CellEntity(child));
 
 
         // Script script2 = new Script();
@@ -84,8 +82,8 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cCharge = new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10));
-        AddEntity(new CellObject(cCharge, this));
+        Cell cCharge = new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this);
+        AddEntity(new CellEntity(cCharge));
 
         Script scriptCharge2 = new Script();
         try {
@@ -93,8 +91,8 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cCharge2 = new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0));
-        AddEntity(new CellObject(cCharge2, this));
+        Cell cCharge2 = new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this);
+        AddEntity(new CellEntity(cCharge2));
 
         //Spawn food
         int mapArea = Width * Height;
@@ -102,7 +100,7 @@ class World
         for (int i = 0; i < numFoodToSpawn; i++) {
             Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
-                AddEntity(new FoodObject(30, pos, this));
+                AddEntity(new FoodEntity(30, pos, this));
             }
         }
         TickHandlers[0].OnTick += SpawnFood;
@@ -126,7 +124,7 @@ class World
         for (int i = 0; i < numFoodToSpawn; i++) {
             Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
-                AddEntity(new FoodObject(30, pos, this));
+                AddEntity(new FoodEntity(30, pos, this));
             }
         }
     }
@@ -139,23 +137,18 @@ class World
         return grid[position.X, position.Y] == null;
     }
 
-    public bool AddEntity(GameObject entity) {
-        if (!IsInBounds(entity.Position) || !IsEmpty(entity.Position)) {
-            return false;
+    public void AddEntity(EntityObject entity) {
+        if (entity.InScene) {
+            throw new Exception("Entity " + entity.Name + " already in scene");
         }
         entities.Add(entity);
-        grid[entity.Position.X, entity.Position.Y] = entity;
-        return true;
+        entity.InScene = true;
     }
 
-    public void RemoveEntity(GameObject entity) {
-        if (grid[entity.Position.X, entity.Position.Y] != entity) {
-            throw new Exception("Entity " + entity.Name + " not found in grid");
-        }
+    public void RemoveEntity(EntityObject entity) {
         if (!entities.Remove(entity)) {
             throw new Exception("Entity " + entity.Name + " not found in entities");
         }
-        grid[entity.Position.X, entity.Position.Y] = null;
     }
 
     public static Point GetRandomPosition(int width, int height)

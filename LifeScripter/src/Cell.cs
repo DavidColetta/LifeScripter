@@ -1,48 +1,35 @@
 using System.Diagnostics;
 using System.Text;
-using LifeScripter.Backend;
 using MoonSharp.Interpreter;
-class Cell
+class Cell : WorldObject
 {
     //MoonSharp Script variables
     public readonly Script script;
-    Closure? behavior;
-    Closure? onTick;
+    readonly Closure? behavior;
+    readonly Closure? onTick;
     readonly Table memory;
     //SadConsole variables
     public readonly ColoredGlyph Appearance;
-    public Point Position { get; private set; }
     //Cell variables
     static int SIGHT_DISTANCE = 14;
     static int MAX_ENERGY = 300;
-    World? world;
-    public bool IsAlive = false;
     bool exhausted = true;
     int energy = MAX_ENERGY;
 
     public int ticksPerSecond = 4;
 
-    public delegate void SpeedChangedDelegate(int prevSpeed);
-    public event SpeedChangedDelegate? onSpeedChanged;
-
-    public Cell(Cell parent, Point position) : this(parent.script, position, parent.Appearance) {
+    public Cell(Cell parent, Point position) : this(parent.script, position, parent.World, parent.Appearance) {
         this.ticksPerSecond = parent.ticksPerSecond;
     }
     
-    public Cell(Script behaviorScript, Point position, ColoredGlyph defaultAppearance) {
+    public Cell(Script behaviorScript, Point position, World world, ColoredGlyph defaultAppearance) 
+        : base(position, world) {
         this.script = behaviorScript;
         Appearance = defaultAppearance;
-        Position = position;
         memory = new Table(script);
         memory.RegisterConstants();
         memory.RegisterCoreModules(CoreModules.Preset_SoftSandbox);//This could cause problems with Reload
         RegisterCellFunctions();
-    }
-    
-    public Cell(Script behaviorScript, Point position) : this(behaviorScript, position, GetAppearanceFromHashedScript(behaviorScript)) {}
-
-    public void Initialize(World world) {
-        this.world = world;
 
         DynValue scriptCallback;
         try {
@@ -71,7 +58,11 @@ class Cell
             return;
         }
         onTick = tickCallback.Function;
+
+        SubscribeToTicks();
     }
+    
+    public Cell(Script behaviorScript, Point position, World world) : this(behaviorScript, position, world, GetAppearanceFromHashedScript(behaviorScript)) {}
 
     private void RegisterCellFunctions() {
         memory["changeGlyph"] = (Action<int>)ChangeGlyph;
@@ -95,7 +86,7 @@ class Cell
 
     public void Tick() {
         if (energy <= 0) {
-            IsAlive = false;
+            Die();
         }
         if (!IsAlive) {
             return;
@@ -105,7 +96,7 @@ class Cell
             onTick?.Call();
         } catch (ScriptRuntimeException e) {
             Debug.WriteLine("Error in script: " + e.DecoratedMessage);
-            IsAlive = false;
+            Die();
             return;
         }
         energy--;
@@ -144,14 +135,14 @@ class Cell
                 default:
                     throw new ScriptRuntimeException("Invalid direction");
             }
-            if (lookPositioin.X < 0 || lookPositioin.X >= world!.Width || lookPositioin.Y < 0 || lookPositioin.Y >= world!.Height) {
+            if (lookPositioin.X < 0 || lookPositioin.X >= World.Width || lookPositioin.Y < 0 || lookPositioin.Y >= World.Height) {
                 lookResult["type"] = "wall";
                 lookResult["distance"] = i;
                 return lookResult;
             }
-            GameObject? entity = world.grid[lookPositioin.X, lookPositioin.Y];
+            WorldObject? entity = World.grid[lookPositioin.X, lookPositioin.Y];
             if (entity != null) {
-                if (entity is FoodObject) {
+                if (entity is Food) {
                     lookResult["type"] = "food";
                     lookResult["distance"] = i;
                     return lookResult;
@@ -187,15 +178,15 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world!.IsInBounds(newPosition)) {
+        if (!World.IsInBounds(newPosition)) {
             return false;
         }
-        if (world.grid[newPosition.X, newPosition.Y] != null) {
+        if (World.grid[newPosition.X, newPosition.Y] != null) {
             if (!Eat(direction)) {
                 return false;
             }
         }
-        Position = newPosition;
+        Reposition(newPosition);
         energy--;
         exhausted = true;
         return true;
@@ -219,18 +210,17 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world!.IsInBounds(newPosition)) {
+        if (!World.IsInBounds(newPosition)) {
             return false;
         }
-        if (world.grid[newPosition.X, newPosition.Y] != null) {
-            FoodObject? food = world.grid[newPosition.X, newPosition.Y] as FoodObject;
+        if (World.grid[newPosition.X, newPosition.Y] != null) {
+            Food? food = World.grid[newPosition.X, newPosition.Y] as Food;
             if (food != null) {//Eat the food
-                world.RemoveEntity(food);
+                food.Die();
                 energy += food.Nutrition;
                 if (energy > MAX_ENERGY) {
                     energy = MAX_ENERGY;
                 }
-                food.isAlive = false;
                 return true;
             } else {//if there is something else in the way, don't eat
                 return false;
@@ -260,15 +250,15 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world!.IsInBounds(newPosition)) {
+        if (!World.IsInBounds(newPosition)) {
             return false;
         }
-        if (world.grid[newPosition.X, newPosition.Y] != null) {
+        if (World.grid[newPosition.X, newPosition.Y] != null) {
             return false;
         }
-        Cell newCell = new Cell(this, Position);
+        Cell newCell = new Cell(this, newPosition);
         newCell.energy = energy / 2;
-        world.AddEntity(new CellObject(newCell, world));
+        World.AddEntity(new CellEntity(newCell));
         energy = energy / 2;
         return true;
     }
@@ -279,7 +269,29 @@ class Cell
         }
         int oldSpeed = ticksPerSecond;
         ticksPerSecond = newSpeed;
-        onSpeedChanged?.Invoke(oldSpeed);
+        UnsubscribeFromTicks(oldSpeed);
+        SubscribeToTicks();
+    }
+
+    private void SubscribeToTicks() {
+        double tickInterval = (double)World.TICKS_PER_SECOND / ticksPerSecond;
+        for (double i = 0; i < World.TICKS_PER_SECOND; i += tickInterval) {
+            World.TickHandlers[(int)i] += Tick;
+        }
+    }
+
+    private void UnsubscribeFromTicks(int speed) {
+        double tickInterval = (double)World.TICKS_PER_SECOND / speed;
+        for (double i = 0; i < World.TICKS_PER_SECOND; i += tickInterval) {
+            World.TickHandlers[(int)i] -= Tick;
+        }
+    }
+
+    public override void Die() {
+        if (!IsDead) {
+            UnsubscribeFromTicks(ticksPerSecond);
+        }
+        base.Die();
     }
 
     public enum Direction {
