@@ -6,6 +6,7 @@ class FoodObject : GameObject
     public FoodObject(int nutrition, Point position, World world)
         : base(new ColoredGlyph(Color.Green, Color.Transparent, 6), position, world)
     {
+        isAlive = true;
         Nutrition = nutrition;
     }
 }

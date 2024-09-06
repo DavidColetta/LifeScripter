@@ -11,8 +11,6 @@ internal class GameObject : Entity
     {
         Position = position;
         this.world = world;
-
-        isAlive = true;
     }
 
     public virtual void Move(Point newPosition)

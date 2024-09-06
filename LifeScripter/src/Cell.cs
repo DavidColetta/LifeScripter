@@ -6,8 +6,8 @@ class Cell
 {
     //MoonSharp Script variables
     public readonly Script script;
-    readonly Closure? behavior;
-    readonly Closure? onTick;
+    Closure? behavior;
+    Closure? onTick;
     readonly Table memory;
     //SadConsole variables
     public readonly ColoredGlyph Appearance;
@@ -15,7 +15,7 @@ class Cell
     //Cell variables
     static int SIGHT_DISTANCE = 14;
     static int MAX_ENERGY = 300;
-    World world;
+    World? world;
     public bool IsAlive = false;
     bool exhausted = true;
     int energy = MAX_ENERGY;
@@ -25,19 +25,25 @@ class Cell
     public delegate void SpeedChangedDelegate(int prevSpeed);
     public event SpeedChangedDelegate? onSpeedChanged;
 
-    public Cell(Cell parent, Point position) : this(parent.script, position, parent.world, parent.Appearance) {
+    public Cell(Cell parent, Point position) : this(parent.script, position, parent.Appearance) {
         this.ticksPerSecond = parent.ticksPerSecond;
     }
     
-    public Cell(Script behaviorScript, Point position, World world, ColoredGlyph defaultAppearance) {
+    public Cell(Script behaviorScript, Point position, ColoredGlyph defaultAppearance) {
         this.script = behaviorScript;
-        this.world = world;
         Appearance = defaultAppearance;
         Position = position;
         memory = new Table(script);
         memory.RegisterConstants();
         memory.RegisterCoreModules(CoreModules.Preset_SoftSandbox);//This could cause problems with Reload
         RegisterCellFunctions();
+    }
+    
+    public Cell(Script behaviorScript, Point position) : this(behaviorScript, position, GetAppearanceFromHashedScript(behaviorScript)) {}
+
+    public void Initialize(World world) {
+        this.world = world;
+
         DynValue scriptCallback;
         try {
             scriptCallback = script.Reload(memory);
@@ -46,7 +52,7 @@ class Cell
             return;
         }
         if (scriptCallback.Type != DataType.Function) {
-            Debug.WriteLine("Script reload did not return a closure");
+            Debug.WriteLine("Script reload did not return a closure (this should never happen)");
             return;
         }
         behavior = scriptCallback.Function;
@@ -66,8 +72,6 @@ class Cell
         }
         onTick = tickCallback.Function;
     }
-    
-    public Cell(Script behaviorScript, Point position, World world) : this(behaviorScript, position, world, GetAppearanceFromHashedScript(behaviorScript)) {}
 
     private void RegisterCellFunctions() {
         memory["changeGlyph"] = (Action<int>)ChangeGlyph;
@@ -140,7 +144,7 @@ class Cell
                 default:
                     throw new ScriptRuntimeException("Invalid direction");
             }
-            if (lookPositioin.X < 0 || lookPositioin.X >= world.Width || lookPositioin.Y < 0 || lookPositioin.Y >= world.Height) {
+            if (lookPositioin.X < 0 || lookPositioin.X >= world!.Width || lookPositioin.Y < 0 || lookPositioin.Y >= world!.Height) {
                 lookResult["type"] = "wall";
                 lookResult["distance"] = i;
                 return lookResult;
@@ -183,7 +187,7 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world.IsInBounds(newPosition)) {
+        if (!world!.IsInBounds(newPosition)) {
             return false;
         }
         if (world.grid[newPosition.X, newPosition.Y] != null) {
@@ -215,7 +219,7 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world.IsInBounds(newPosition)) {
+        if (!world!.IsInBounds(newPosition)) {
             return false;
         }
         if (world.grid[newPosition.X, newPosition.Y] != null) {
@@ -256,7 +260,7 @@ class Cell
             default:
                 throw new ScriptRuntimeException("Invalid direction");
         }
-        if (!world.IsInBounds(newPosition)) {
+        if (!world!.IsInBounds(newPosition)) {
             return false;
         }
         if (world.grid[newPosition.X, newPosition.Y] != null) {

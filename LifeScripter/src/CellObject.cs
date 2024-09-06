@@ -13,6 +13,8 @@ class CellObject : GameObject {
             return;
         }
 
+        cell.Initialize(world);
+
         SubscribeToTicks();
 
         cell.onSpeedChanged += (int prevSpeed) => {

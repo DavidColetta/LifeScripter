@@ -43,20 +43,22 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0), this);
+        Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0));
         c.ticksPerSecond = 1;
         AddEntity(new CellObject(c, this));
+        Cell child = new Cell(c, c.Position + (0, -10));
+        AddEntity(new CellObject(child, this));
 
 
-        Script script2 = new Script();
-        try {
-            script2.LoadFile("scripts\\findFood.lua", null, "hai");
-        } catch (SyntaxErrorException e) {
-            Debug.WriteLine(e.DecoratedMessage);
-        }
-        Cell c2 = new Cell(script2, _screenSurface.Surface.Area.Center + (10, 0), this);
-        c2.ticksPerSecond = 2;
-        AddEntity(new CellObject(c2, this));
+        // Script script2 = new Script();
+        // try {
+        //     script2.LoadFile("scripts\\findFood.lua", null, "hai");
+        // } catch (SyntaxErrorException e) {
+        //     Debug.WriteLine(e.DecoratedMessage);
+        // }
+        // Cell c2 = new Cell(script2, _screenSurface.Surface.Area.Center + (10, 0));
+        // c2.ticksPerSecond = 2;
+        // AddEntity(new CellObject(c2, this));
 
         // Script scriptNoReproduce = new Script();
         // try {
@@ -67,14 +69,32 @@ class World
         // Cell cNoReproduce = new Cell(scriptNoReproduce, _screenSurface.Surface.Area.Center + (0, 10), this);
         // AddEntity(new CellObject(cNoReproduce, this));
 
-        Script scriptHibernate = new Script();
+        // Script scriptHibernate = new Script();
+        // try {
+        //     scriptHibernate.LoadFile("scripts\\findFoodHibernate.lua", null);
+        // } catch (SyntaxErrorException e) {
+        //     Debug.WriteLine(e.DecoratedMessage);
+        // }
+        // Cell cHibernate = new Cell(scriptHibernate, _screenSurface.Surface.Area.Center + (0, -10));
+        // AddEntity(new CellObject(cHibernate, this));
+
+        Script scriptCharge = new Script();
         try {
-            scriptHibernate.LoadFile("scripts\\findFoodHibernate.lua", null);
+            scriptCharge.LoadFile("scripts\\findFoodCharge.lua", null, "Charge");
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cHibernate = new Cell(scriptHibernate, _screenSurface.Surface.Area.Center + (0, -10), this);
-        AddEntity(new CellObject(cHibernate, this));
+        Cell cCharge = new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10));
+        AddEntity(new CellObject(cCharge, this));
+
+        Script scriptCharge2 = new Script();
+        try {
+            scriptCharge2.LoadFile("scripts\\findFoodCharge2.lua", null);
+        } catch (SyntaxErrorException e) {
+            Debug.WriteLine(e.DecoratedMessage);
+        }
+        Cell cCharge2 = new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0));
+        AddEntity(new CellObject(cCharge2, this));
 
         //Spawn food
         int mapArea = Width * Height;
