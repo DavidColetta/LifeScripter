@@ -5,7 +5,7 @@ using MoonSharp.Interpreter;
 class Cell
 {
     //MoonSharp Script variables
-    readonly Script script;
+    public readonly Script script;
     readonly Closure? behavior;
     readonly Closure? onTick;
     readonly Table memory;
@@ -19,6 +19,15 @@ class Cell
     public bool IsAlive = false;
     bool exhausted = true;
     int energy = MAX_ENERGY;
+
+    public int ticksPerSecond = 4;
+
+    public delegate void SpeedChangedDelegate(int prevSpeed);
+    public event SpeedChangedDelegate? onSpeedChanged;
+
+    public Cell(Cell parent, Point position) : this(parent.script, position, parent.world, parent.Appearance) {
+        this.ticksPerSecond = parent.ticksPerSecond;
+    }
     
     public Cell(Script behaviorScript, Point position, World world, ColoredGlyph defaultAppearance) {
         this.script = behaviorScript;
@@ -76,6 +85,8 @@ class Cell
         memory["move"] = (Func<Direction, bool>)Move;
         memory["eat"] = (Func<Direction, bool>)Eat;
         memory["reproduce"] = (Func<Direction, bool>)Reproduce;
+        memory["changeSpeed"] = (Action<int>)ChangeSpeed;
+        memory["getMaxEnergy"] = () => MAX_ENERGY;
     }
 
     public void Tick() {
@@ -251,13 +262,20 @@ class Cell
         if (world.grid[newPosition.X, newPosition.Y] != null) {
             return false;
         }
-        Cell newCell = new Cell(script, newPosition, world, Appearance)
-        {
-            energy = energy / 2
-        };
+        Cell newCell = new Cell(this, Position);
+        newCell.energy = energy / 2;
         world.AddEntity(new CellObject(newCell, world));
         energy = energy / 2;
         return true;
+    }
+
+    public void ChangeSpeed(int newSpeed) {
+        if (ticksPerSecond == newSpeed) {
+            return;
+        }
+        int oldSpeed = ticksPerSecond;
+        ticksPerSecond = newSpeed;
+        onSpeedChanged?.Invoke(oldSpeed);
     }
 
     public enum Direction {

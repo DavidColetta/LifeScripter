@@ -38,7 +38,7 @@ return function()
         moveDir = (moveDir + 1) % 4
     end
     
-    if (getEnergy() >= 175) then
+    if (getEnergy() >= getMaxEnergy() - 30) then
         reproduce(moveDir)
     end
 end

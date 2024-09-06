@@ -7,7 +7,7 @@ internal class RootScreen: ScreenObject
 {
     private readonly World _map;
     double time;
-    double timeStep = 0.01;
+    double timeStep = 0.0002;
 
     readonly Point screenCenter;
 

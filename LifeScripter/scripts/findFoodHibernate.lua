@@ -22,6 +22,10 @@ return function()
     end
     
     if (getEnergy() >= getMaxEnergy() - 30) then
+        changeSpeed(4)
         reproduce(moveDir)
+    end
+    if (getEnergy() <= 100) then
+        changeSpeed(1)
     end
 end

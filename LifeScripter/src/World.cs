@@ -17,9 +17,9 @@ class World
 
     public int Width => _screenSurface.Surface.Width;
     public int Height => _screenSurface.Surface.Height;
-
-    public delegate void TickHandler();
-    public event TickHandler? OnTick;
+    public TickHandler[] TickHandlers = new TickHandler[TICKS_PER_SECOND];
+    public const int TICKS_PER_SECOND = 100;
+    int tickNumber = 0;
 
     public World(int mapWidth, int mapHeight)
     {
@@ -32,33 +32,49 @@ class World
 
         grid = new GameObject[mapWidth, mapHeight];
 
+        for (int i = 0; i < TICKS_PER_SECOND; i++)
+        {
+            TickHandlers[i] = new TickHandler();
+        }
+
         Script testScript = new Script();
         try {
-            testScript.LoadFile("scripts\\findFood.lua", null);
+            testScript.LoadFile("scripts\\findFood.lua", null, "slowHai");
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
         Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0), this);
+        c.ticksPerSecond = 1;
         AddEntity(new CellObject(c, this));
 
 
         Script script2 = new Script();
         try {
-            script2.LoadFile("scripts\\findFood2.lua", null);
+            script2.LoadFile("scripts\\findFood.lua", null, "hai");
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
         Cell c2 = new Cell(script2, _screenSurface.Surface.Area.Center + (10, 0), this);
+        c2.ticksPerSecond = 2;
         AddEntity(new CellObject(c2, this));
 
-        Script scriptNoReproduce = new Script();
+        // Script scriptNoReproduce = new Script();
+        // try {
+        //     scriptNoReproduce.LoadFile("scripts\\findFoodNoReproduce.lua", null);
+        // } catch (SyntaxErrorException e) {
+        //     Debug.WriteLine(e.DecoratedMessage);
+        // }
+        // Cell cNoReproduce = new Cell(scriptNoReproduce, _screenSurface.Surface.Area.Center + (0, 10), this);
+        // AddEntity(new CellObject(cNoReproduce, this));
+
+        Script scriptHibernate = new Script();
         try {
-            scriptNoReproduce.LoadFile("scripts\\findFoodNoReproduce.lua", null);
+            scriptHibernate.LoadFile("scripts\\findFoodHibernate.lua", null);
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cNoReproduce = new Cell(scriptNoReproduce, _screenSurface.Surface.Area.Center + (0, 10), this);
-        AddEntity(new CellObject(cNoReproduce, this));
+        Cell cHibernate = new Cell(scriptHibernate, _screenSurface.Surface.Area.Center + (0, -10), this);
+        AddEntity(new CellObject(cHibernate, this));
 
         //Spawn food
         int mapArea = Width * Height;
@@ -69,21 +85,24 @@ class World
                 AddEntity(new FoodObject(30, pos, this));
             }
         }
+        TickHandlers[0].OnTick += SpawnFood;
         
         // UserControlledObject = new GameObject(new ColoredGlyph(Color.Black, Color.Transparent, 2), _screenSurface.Surface.Area.Center);
         // entities.Add(UserControlledObject);
 
 
-        _screenSurface.SadComponents.Add(entities);
+        _screenSurface.SadComponents.Add(entities);        
     }
 
     public void Tick() {
-        OnTick?.Invoke();
+        TickHandlers[tickNumber % TICKS_PER_SECOND].FireTick();
 
+        tickNumber++;
+    }
 
-        //Spawn food
+    public void SpawnFood() {
         int mapArea = Width * Height;
-        int numFoodToSpawn = (int)(mapArea * 0.00005);
+        int numFoodToSpawn = (int)(mapArea * 0.0001);
         for (int i = 0; i < numFoodToSpawn; i++) {
             Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
@@ -111,10 +130,10 @@ class World
 
     public void RemoveEntity(GameObject entity) {
         if (grid[entity.Position.X, entity.Position.Y] != entity) {
-            throw new Exception("Entity not found in grid");
+            throw new Exception("Entity " + entity.Name + " not found in grid");
         }
         if (!entities.Remove(entity)) {
-            throw new Exception("Entity not found in entities");
+            throw new Exception("Entity " + entity.Name + " not found in entities");
         }
         grid[entity.Position.X, entity.Position.Y] = null;
     }
