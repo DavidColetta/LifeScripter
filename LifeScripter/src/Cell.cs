@@ -259,7 +259,7 @@ class Cell : WorldObject
         }
         Cell newCell = new Cell(this, newPosition);
         newCell.energy = energy / 2;
-        World.SpawnCell(newCell);
+        World.AddSpawnCellEntityToUpdate(newCell);
         energy = energy / 2;
         return true;
     }

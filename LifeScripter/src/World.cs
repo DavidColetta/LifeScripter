@@ -44,7 +44,7 @@ class World
             Debug.WriteLine(e.DecoratedMessage);
         }
         Cell testCell = new Cell(testScript, _screenSurface.Surface.Area.Center + (0, -10), this);
-        SpawnCell(testCell);
+        SpawnCellEntity(testCell);
 
         Script scriptCharge = new Script();
         try {
@@ -52,7 +52,7 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        SpawnCell(new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this));
+        SpawnCellEntity(new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this));
 
         Script scriptCharge2 = new Script();
         try {
@@ -60,7 +60,7 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        SpawnCell(new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this));
+        SpawnCellEntity(new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this));
 
         //Spawn food
         PopulateFood(0.01);
@@ -72,12 +72,28 @@ class World
             OSU?.Invoke(this, System.EventArgs.Empty);
         };
 
-        _screenSurface.SadComponents.Add(entities);        
+        _screenSurface.SadComponents.Add(entities);
     }
 
     public void AddEntityToUpdate(DisplayEntity entity) {
         OnScreenUpdate += (sender, e) => {
             entity.Update(sender, GameHost.Instance);
+        };
+    }
+
+    public void AddSpawnCellEntityToUpdate(Cell cell) {
+        OnScreenUpdate += (sender, e) => {
+            if (cell.IsAlive) {
+                SpawnCellEntity(cell);
+            }
+        };
+    }
+
+    public void AddSpawnFoodEntityToUpdate(Food food) {
+        OnScreenUpdate += (sender, e) => {
+            if (food.IsAlive) {
+                _ = new FoodEntity(food);
+            }
         };
     }
 
@@ -97,7 +113,7 @@ class World
         for (int i = 0; i < numFoodToSpawn; i++) {
             Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
-                new FoodEntity(30, pos, this);
+                AddSpawnFoodEntityToUpdate(new Food(30, pos, this));
             }
         }
     }
@@ -110,8 +126,8 @@ class World
         return grid[position.X, position.Y] == null;
     }
 
-    public void SpawnCell(Cell cell) {
-        new CellEntity(cell);
+    public void SpawnCellEntity(Cell cell) {
+        _ = new CellEntity(cell);
     }
 
     public void AddEntity(DisplayEntity entity) {

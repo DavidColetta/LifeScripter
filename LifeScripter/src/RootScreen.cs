@@ -114,6 +114,7 @@ internal class RootScreen: ScreenObject
             frameUpdateEvent.Set();
         };
         tickWorker = new Thread(TickWorker);
+        tickWorker.Name = "Tick Worker";
         tickWorker.Start();
 
         //Stop thread on application close
