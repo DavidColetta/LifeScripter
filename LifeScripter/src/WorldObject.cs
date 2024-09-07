@@ -4,6 +4,9 @@ abstract class WorldObject
     public World World {get; private set;}
     public bool IsAlive { get; protected set; } = false;
     public bool IsDead { get; protected set; } = false;
+
+    public delegate void EmptyHandler();
+    public event EmptyHandler? OnUpdate;
     public WorldObject(Point position, World world)
     {
         Position = position;
@@ -24,10 +27,15 @@ abstract class WorldObject
     public virtual void Die() {
         IsAlive = false;
         if (IsDead) {
-            // throw new System.Exception("Cell " + script.GetSourceCode(0).Name + " not found in grid");
             return;
         }
         IsDead = true;
         World.grid[Position.X, Position.Y] = null;
+
+        OnUpdate?.Invoke();
+    }
+
+    public void FireOnUpdate() {
+        OnUpdate?.Invoke();
     }
 }

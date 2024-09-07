@@ -1,5 +1,7 @@
 moveDir = directions.west
 
+changeSpeed(1)
+
 return function()
     if (math.random() < 0.1) then
         moveDir = (moveDir + 1) % 4

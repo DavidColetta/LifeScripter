@@ -1,5 +1,5 @@
 
-class CellEntity : EntityObject {
+class CellEntity : DisplayEntity {
 
     Cell cell;
     public CellEntity(Cell cell)
@@ -8,9 +8,12 @@ class CellEntity : EntityObject {
         this.cell = cell;
         Name = cell.script.GetSourceCode(0).Name;
 
-        if (!cell.World.IsInBounds(cell.Position) || !cell.World.IsEmpty(cell.Position)) {
-            return;
-        }
+        cell.OnUpdate += () => {
+            if (IsSubscribedToFrameUpdate) return;
+            IsSubscribedToFrameUpdate = true;
+            cell.World.AddEntityToUpdate(this);
+        };
+        cell.World.AddEntityToUpdate(this);
     }
 
     public override WorldObject GetWorldObject() {

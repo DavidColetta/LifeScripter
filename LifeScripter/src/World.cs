@@ -9,7 +9,7 @@ class World
     private readonly EntityManager entities;
 
     public ScreenSurface SurfaceObject => _screenSurface;
-    public EntityObject? UserControlledObject { get; set; }
+    public DisplayEntity? UserControlledObject { get; set; }
 
     public WorldObject?[,] grid;
 
@@ -18,6 +18,8 @@ class World
     public TickHandler[] TickHandlers = new TickHandler[TICKS_PER_SECOND];
     public const int TICKS_PER_SECOND = 100;
     int tickNumber = 0;
+
+    public event EventHandler? OnScreenUpdate;
 
     public World(int mapWidth, int mapHeight)
     {
@@ -41,40 +43,8 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell c = new Cell(testScript, _screenSurface.Surface.Area.Center + (-10, 0), this);
-        c.ticksPerSecond = 1;
-        AddEntity(new CellEntity(c));
-        Cell child = new Cell(c, c.Position + (0, -10));
-        AddEntity(new CellEntity(child));
-
-
-        // Script script2 = new Script();
-        // try {
-        //     script2.LoadFile("scripts\\findFood.lua", null, "hai");
-        // } catch (SyntaxErrorException e) {
-        //     Debug.WriteLine(e.DecoratedMessage);
-        // }
-        // Cell c2 = new Cell(script2, _screenSurface.Surface.Area.Center + (10, 0));
-        // c2.ticksPerSecond = 2;
-        // AddEntity(new CellObject(c2, this));
-
-        // Script scriptNoReproduce = new Script();
-        // try {
-        //     scriptNoReproduce.LoadFile("scripts\\findFoodNoReproduce.lua", null);
-        // } catch (SyntaxErrorException e) {
-        //     Debug.WriteLine(e.DecoratedMessage);
-        // }
-        // Cell cNoReproduce = new Cell(scriptNoReproduce, _screenSurface.Surface.Area.Center + (0, 10), this);
-        // AddEntity(new CellObject(cNoReproduce, this));
-
-        // Script scriptHibernate = new Script();
-        // try {
-        //     scriptHibernate.LoadFile("scripts\\findFoodHibernate.lua", null);
-        // } catch (SyntaxErrorException e) {
-        //     Debug.WriteLine(e.DecoratedMessage);
-        // }
-        // Cell cHibernate = new Cell(scriptHibernate, _screenSurface.Surface.Area.Center + (0, -10));
-        // AddEntity(new CellObject(cHibernate, this));
+        Cell testCell = new Cell(testScript, _screenSurface.Surface.Area.Center + (0, -10), this);
+        SpawnCell(testCell);
 
         Script scriptCharge = new Script();
         try {
@@ -82,8 +52,7 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cCharge = new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this);
-        AddEntity(new CellEntity(cCharge));
+        SpawnCell(new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this));
 
         Script scriptCharge2 = new Script();
         try {
@@ -91,25 +60,25 @@ class World
         } catch (SyntaxErrorException e) {
             Debug.WriteLine(e.DecoratedMessage);
         }
-        Cell cCharge2 = new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this);
-        AddEntity(new CellEntity(cCharge2));
+        SpawnCell(new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this));
 
         //Spawn food
-        int mapArea = Width * Height;
-        int numFoodToSpawn = (int)(mapArea * 0.01);
-        for (int i = 0; i < numFoodToSpawn; i++) {
-            Point pos = GetRandomPosition(Width, Height);
-            if (IsEmpty(pos)) {
-                AddEntity(new FoodEntity(30, pos, this));
-            }
-        }
-        TickHandlers[0].OnTick += SpawnFood;
-        
-        // UserControlledObject = new GameObject(new ColoredGlyph(Color.Black, Color.Transparent, 2), _screenSurface.Surface.Area.Center);
-        // entities.Add(UserControlledObject);
+        PopulateFood(0.01);
+        TickHandlers[0].OnTick += PopulateFood;
 
+        Game.Instance.FrameUpdate += (sender, e) => {
+            EventHandler? OSU = OnScreenUpdate;
+            OnScreenUpdate = null;
+            OSU?.Invoke(this, System.EventArgs.Empty);
+        };
 
         _screenSurface.SadComponents.Add(entities);        
+    }
+
+    public void AddEntityToUpdate(DisplayEntity entity) {
+        OnScreenUpdate += (sender, e) => {
+            entity.Update(sender, GameHost.Instance);
+        };
     }
 
     public void Tick() {
@@ -118,13 +87,17 @@ class World
         tickNumber++;
     }
 
-    public void SpawnFood() {
+    public void PopulateFood() {
+        PopulateFood(0.0001);
+    }
+
+    public void PopulateFood(double density) {
         int mapArea = Width * Height;
-        int numFoodToSpawn = (int)(mapArea * 0.0001);
+        int numFoodToSpawn = (int)(mapArea * density);
         for (int i = 0; i < numFoodToSpawn; i++) {
             Point pos = GetRandomPosition(Width, Height);
             if (IsEmpty(pos)) {
-                AddEntity(new FoodEntity(30, pos, this));
+                new FoodEntity(30, pos, this);
             }
         }
     }
@@ -137,15 +110,18 @@ class World
         return grid[position.X, position.Y] == null;
     }
 
-    public void AddEntity(EntityObject entity) {
+    public void SpawnCell(Cell cell) {
+        new CellEntity(cell);
+    }
+
+    public void AddEntity(DisplayEntity entity) {
         if (entity.InScene) {
             throw new Exception("Entity " + entity.Name + " already in scene");
         }
         entities.Add(entity);
-        entity.InScene = true;
     }
 
-    public void RemoveEntity(EntityObject entity) {
+    public void RemoveEntity(DisplayEntity entity) {
         if (!entities.Remove(entity)) {
             throw new Exception("Entity " + entity.Name + " not found in entities");
         }

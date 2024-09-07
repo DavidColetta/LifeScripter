@@ -10,8 +10,8 @@ internal class RootScreen: ScreenObject
 {
     private readonly World _map;
     double time;
+    object _timeLock = new();
     double timeStep = 0;
-
     readonly Point screenCenter;
 
     Point startDragPosition;
@@ -19,7 +19,9 @@ internal class RootScreen: ScreenObject
 
     readonly ControlsConsole timeControls;
 
-    // Thread tickWorker;
+    Thread tickWorker;
+    AutoResetEvent frameUpdateEvent = new(false);
+    volatile bool killTickWorker = false;
 
     public RootScreen()
     {
@@ -39,7 +41,7 @@ internal class RootScreen: ScreenObject
             Text = "x0"
         };
         pauseButton.Click += (sender, e) => {
-            timeStep = 0;
+            SetTimeStep(0);
         };
         ButtonBox Buttonx1 = new(4, 3)
         {
@@ -47,7 +49,7 @@ internal class RootScreen: ScreenObject
             Text = "x1"
         };
         Buttonx1.Click += (sender, e) => {
-            timeStep = 1.0 / World.TICKS_PER_SECOND;
+            SetTimeStep(1.0 / World.TICKS_PER_SECOND);
         };
         ButtonBox Buttonx10 = new(5, 3)
         {
@@ -55,7 +57,7 @@ internal class RootScreen: ScreenObject
             Text = "x10"
         };
         Buttonx10.Click += (sender, e) => {
-            timeStep = 0.1 / World.TICKS_PER_SECOND;
+            SetTimeStep(0.1 / World.TICKS_PER_SECOND);
         };
         ButtonBox Buttonx25 = new(5, 3)
         {
@@ -63,7 +65,7 @@ internal class RootScreen: ScreenObject
             Text = "x25"
         };
         Buttonx25.Click += (sender, e) => {
-            timeStep = 0.04 / World.TICKS_PER_SECOND;
+            SetTimeStep(0.04 / World.TICKS_PER_SECOND);
         };
         ButtonBox Buttonx50 = new(5, 3)
         {
@@ -71,7 +73,7 @@ internal class RootScreen: ScreenObject
             Text = "x50"
         };
         Buttonx50.Click += (sender, e) => {
-            timeStep = 0.02 / World.TICKS_PER_SECOND;
+            SetTimeStep(0.02 / World.TICKS_PER_SECOND);
         };
         ButtonBox Buttonx100 = new(6, 3)
         {
@@ -79,7 +81,7 @@ internal class RootScreen: ScreenObject
             Text = "x100"
         };
         Buttonx100.Click += (sender, e) => {
-            timeStep = 0.01 / World.TICKS_PER_SECOND;
+            SetTimeStep(0.01 / World.TICKS_PER_SECOND);
         };
         ButtonBox ButtonMax = new(5, 3)
         {
@@ -87,7 +89,7 @@ internal class RootScreen: ScreenObject
             Text = "Max"
         };
         ButtonMax.Click += (sender, e) => {
-            timeStep = -1;
+            SetTimeStep(-1);
         };
 
         timeControls.Controls.Add(pauseButton);
@@ -101,22 +103,51 @@ internal class RootScreen: ScreenObject
         Children.Add(timeControls);
 
         Game.Instance.FrameUpdate += (sender, e) => {
-            System.Diagnostics.Debug.WriteLine("Frame Update");
+            // System.Diagnostics.Debug.WriteLine("Frame Update");
             if (timeStep == 0) {
                 return;
             }
-            time += e.UpdateFrameDelta.TotalSeconds;
-            TickWorker();
+            lock (_timeLock) {
+                time += e.UpdateFrameDelta.TotalSeconds;
+            }
+            // TickWorker();
+            frameUpdateEvent.Set();
         };
-        // tickWorker = new Thread(TickWorker);
-        // tickWorker.Start();
+        tickWorker = new Thread(TickWorker);
+        tickWorker.Start();
+
+        //Stop thread on application close
+        Game.Instance.Ending += (sender, e) => {
+            killTickWorker = true;
+            tickWorker.Interrupt();
+        };
     }
 
     void TickWorker() {
-        while (time > timeStep)
-        {
-            time -= timeStep;
-            _map.Tick();
+        while (!killTickWorker) {
+            try {
+                frameUpdateEvent.WaitOne();
+            } catch (ThreadInterruptedException) {
+                break;
+            }
+            
+            while (time > timeStep && timeStep != 0 && !killTickWorker)
+            {
+                if (timeStep > 0) {
+                    lock (_timeLock) {
+                        time -= timeStep;
+                    }
+                }
+                
+                _map.Tick();
+            }
+        }
+    }
+
+    public void SetTimeStep(double newTimeStep) {
+        timeStep = newTimeStep;
+        lock (_timeLock) {
+            time = 0;
         }
     }
     

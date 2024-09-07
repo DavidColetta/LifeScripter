@@ -1,23 +1,28 @@
 using SadConsole.Components;
 using SadConsole.Entities;
 
-abstract class EntityObject : Entity
+abstract class DisplayEntity : Entity
 {
+    public bool IsSubscribedToFrameUpdate = false;
     public bool InScene = false;
-    public EntityObject(ColoredGlyph appearance, Point position)
+    public DisplayEntity(ColoredGlyph appearance, Point position)
         : base(new SingleCell(appearance), 1)
     {
         Position = position;
-
-        Game.Instance.FrameUpdate += Update;
     }
 
     public virtual void Update(object? sender, GameHost e)
     {
+        IsSubscribedToFrameUpdate = false;
         Position = GetWorldObject().Position;
 
+        if (GetWorldObject().IsAlive && !InScene) {
+            GetWorldObject().World.AddEntity(this);
+            InScene = true;
+        }
+        
         if (GetWorldObject().IsDead && InScene) {
-            Game.Instance.FrameUpdate -= Update;
+            InScene = false;
             GetWorldObject().World.RemoveEntity(this);
         }
     }

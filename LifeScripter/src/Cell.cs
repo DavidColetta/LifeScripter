@@ -11,18 +11,18 @@ class Cell : WorldObject
     //SadConsole variables
     public readonly ColoredGlyph Appearance;
     //Cell variables
-    static int SIGHT_DISTANCE = 14;
-    static int MAX_ENERGY = 300;
+    static readonly int SIGHT_DISTANCE = 14;
+    static readonly int MAX_ENERGY = 300;
     bool exhausted = true;
     int energy = MAX_ENERGY;
 
-    public int ticksPerSecond = 4;
+    public int TicksPerSecond{get; private set;} = 4;
 
     public Cell(Cell parent, Point position) : this(parent.script, position, parent.World, parent.Appearance) {
-        this.ticksPerSecond = parent.ticksPerSecond;
+        ChangeSpeed(parent.TicksPerSecond);
     }
     
-    public Cell(Script behaviorScript, Point position, World world, ColoredGlyph defaultAppearance) 
+    public Cell(Script behaviorScript, Point position, World world, ColoredGlyph defaultAppearance)
         : base(position, world) {
         this.script = behaviorScript;
         Appearance = defaultAppearance;
@@ -30,6 +30,8 @@ class Cell : WorldObject
         memory.RegisterConstants();
         memory.RegisterCoreModules(CoreModules.Preset_SoftSandbox);//This could cause problems with Reload
         RegisterCellFunctions();
+
+        SubscribeToTicks();
 
         DynValue scriptCallback;
         try {
@@ -58,8 +60,6 @@ class Cell : WorldObject
             return;
         }
         onTick = tickCallback.Function;
-
-        SubscribeToTicks();
     }
     
     public Cell(Script behaviorScript, Point position, World world) : this(behaviorScript, position, world, GetAppearanceFromHashedScript(behaviorScript)) {}
@@ -100,6 +100,7 @@ class Cell : WorldObject
             return;
         }
         energy--;
+        FireOnUpdate();
     }
     
     public void ChangeGlyph(int glyph) {
@@ -258,23 +259,23 @@ class Cell : WorldObject
         }
         Cell newCell = new Cell(this, newPosition);
         newCell.energy = energy / 2;
-        World.AddEntity(new CellEntity(newCell));
+        World.SpawnCell(newCell);
         energy = energy / 2;
         return true;
     }
 
     public void ChangeSpeed(int newSpeed) {
-        if (ticksPerSecond == newSpeed) {
+        if (TicksPerSecond == newSpeed) {
             return;
         }
-        int oldSpeed = ticksPerSecond;
-        ticksPerSecond = newSpeed;
+        int oldSpeed = TicksPerSecond;
+        TicksPerSecond = newSpeed;
         UnsubscribeFromTicks(oldSpeed);
         SubscribeToTicks();
     }
 
     private void SubscribeToTicks() {
-        double tickInterval = (double)World.TICKS_PER_SECOND / ticksPerSecond;
+        double tickInterval = (double)World.TICKS_PER_SECOND / TicksPerSecond;
         for (double i = 0; i < World.TICKS_PER_SECOND; i += tickInterval) {
             World.TickHandlers[(int)i] += Tick;
         }
@@ -289,7 +290,7 @@ class Cell : WorldObject
 
     public override void Die() {
         if (!IsDead) {
-            UnsubscribeFromTicks(ticksPerSecond);
+            UnsubscribeFromTicks(TicksPerSecond);
         }
         base.Die();
     }
