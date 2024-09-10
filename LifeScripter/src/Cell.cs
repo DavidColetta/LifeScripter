@@ -134,7 +134,7 @@ class Cell : WorldObject
                     lookPositioin += (-1, 0);
                     break;
                 default:
-                    throw new ScriptRuntimeException("Invalid direction");
+                    throw new ScriptRuntimeException("Invalid direction: " + direction + ". Direction must be an integer from 0 to 3.");
             }
             if (lookPositioin.X < 0 || lookPositioin.X >= World.Width || lookPositioin.Y < 0 || lookPositioin.Y >= World.Height) {
                 lookResult["type"] = "wall";
@@ -177,7 +177,7 @@ class Cell : WorldObject
                 newPosition += (-1, 0);
                 break;
             default:
-                throw new ScriptRuntimeException("Invalid direction");
+                throw new ScriptRuntimeException("Invalid direction: " + direction + ". Direction must be an integer from 0 to 3.");
         }
         if (!World.IsInBounds(newPosition)) {
             return false;
@@ -209,7 +209,7 @@ class Cell : WorldObject
                 newPosition += (-1, 0);
                 break;
             default:
-                throw new ScriptRuntimeException("Invalid direction");
+                throw new ScriptRuntimeException("Invalid direction: " + direction + ". Direction must be an integer from 0 to 3.");
         }
         if (!World.IsInBounds(newPosition)) {
             return false;
@@ -249,7 +249,7 @@ class Cell : WorldObject
                 newPosition += (-1, 0);
                 break;
             default:
-                throw new ScriptRuntimeException("Invalid direction");
+                throw new ScriptRuntimeException("Invalid direction: " + direction + ". Direction must be an integer from 0 to 3.");
         }
         if (!World.IsInBounds(newPosition)) {
             return false;

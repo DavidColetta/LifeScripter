@@ -35,56 +35,63 @@ internal class RootScreen: ScreenObject
         //Time Controls
         timeControls = new ControlsConsole(34, 3);
         timeControls.Position = ((Game.Instance.ScreenCellsX / 2) - ((timeControls.Width+1) / 2), Game.Instance.ScreenCellsY - 3);
-        ButtonBox pauseButton = new(4, 3)
+        RadioBoxButton pauseButton = new(4, 3)
         {
+            GroupName = "TimeStep",
             Position = (0, 0),
             Text = "x0"
         };
         pauseButton.Click += (sender, e) => {
             SetTimeStep(0);
         };
-        ButtonBox Buttonx1 = new(4, 3)
+        RadioBoxButton Buttonx1 = new(4, 3)
         {
+            GroupName = "TimeStep",
             Position = (4, 0),
             Text = "x1"
         };
         Buttonx1.Click += (sender, e) => {
             SetTimeStep(1.0 / World.TICKS_PER_SECOND);
         };
-        ButtonBox Buttonx10 = new(5, 3)
+        RadioBoxButton Buttonx10 = new(5, 3)
         {
+            GroupName = "TimeStep",
             Position = (8, 0),
             Text = "x10"
         };
         Buttonx10.Click += (sender, e) => {
             SetTimeStep(0.1 / World.TICKS_PER_SECOND);
         };
-        ButtonBox Buttonx25 = new(5, 3)
+        RadioBoxButton Buttonx25 = new(5, 3)
         {
+            GroupName = "TimeStep",
             Position = (13, 0),
             Text = "x25"
         };
         Buttonx25.Click += (sender, e) => {
             SetTimeStep(0.04 / World.TICKS_PER_SECOND);
         };
-        ButtonBox Buttonx50 = new(5, 3)
+        RadioBoxButton Buttonx50 = new(5, 3)
         {
+            GroupName = "TimeStep",
             Position = (18, 0),
             Text = "x50"
         };
         Buttonx50.Click += (sender, e) => {
             SetTimeStep(0.02 / World.TICKS_PER_SECOND);
         };
-        ButtonBox Buttonx100 = new(6, 3)
+        RadioBoxButton Buttonx100 = new(6, 3)
         {
+            GroupName = "TimeStep",
             Position = (23, 0),
             Text = "x100"
         };
         Buttonx100.Click += (sender, e) => {
             SetTimeStep(0.01 / World.TICKS_PER_SECOND);
         };
-        ButtonBox ButtonMax = new(5, 3)
+        RadioBoxButton ButtonMax = new(5, 3)
         {
+            GroupName = "TimeStep",
             Position = (29, 0),
             Text = "Max"
         };
