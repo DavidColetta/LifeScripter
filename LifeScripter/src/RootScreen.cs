@@ -12,12 +12,16 @@ internal class RootScreen: ScreenObject
     double time;
     object _timeLock = new();
     double timeStep = 0;
+    TimeSpan tickStartTime;
+    int realTicksPerSecond = 0;
     readonly Point screenCenter;
 
     Point startDragPosition;
     int dragSpeed = 1;
 
     readonly ControlsConsole timeControls;
+
+    readonly ScreenSurface tickDisplaySurface;
 
     Thread tickWorker;
     AutoResetEvent frameUpdateEvent = new(false);
@@ -107,9 +111,21 @@ internal class RootScreen: ScreenObject
         timeControls.Controls.Add(Buttonx100);
         timeControls.Controls.Add(ButtonMax);
 
+        tickDisplaySurface = new ScreenSurface(20, 1);
+        tickDisplaySurface.Position = (Game.Instance.ScreenCellsX - 20, Game.Instance.ScreenCellsY - 1);
+
+        Children.Add(tickDisplaySurface);
         Children.Add(timeControls);
 
         Game.Instance.FrameUpdate += (sender, e) => {
+            if (DateTime.Now.TimeOfDay - tickStartTime >= TimeSpan.FromSeconds(1)) {
+                tickStartTime = DateTime.Now.TimeOfDay;
+                string tpsText = realTicksPerSecond + " TPS";
+                tickDisplaySurface.Clear();
+                tickDisplaySurface.Print(20 - tpsText.Length, 0, tpsText, Color.Black);
+                realTicksPerSecond = 0;
+            }
+            
             // System.Diagnostics.Debug.WriteLine("Frame Update");
             if (timeStep == 0) {
                 return;
@@ -147,6 +163,7 @@ internal class RootScreen: ScreenObject
                     }
                 }
                 
+                Interlocked.Increment(ref realTicksPerSecond);
                 _map.Tick();
             }
         }
@@ -157,6 +174,8 @@ internal class RootScreen: ScreenObject
         lock (_timeLock) {
             time = 0;
         }
+        realTicksPerSecond = 0;
+        tickStartTime = DateTime.Now.TimeOfDay;
     }
     
     public override bool ProcessMouse(MouseScreenObjectState state)

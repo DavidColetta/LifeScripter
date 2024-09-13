@@ -18,6 +18,7 @@ class World
     public TickHandler[] TickHandlers = new TickHandler[TICKS_PER_SECOND];
     public const int TICKS_PER_SECOND = 100;
     int tickNumber = 0;
+    int tickIndex = 0;
 
     public event EventHandler? OnScreenUpdate;
 
@@ -98,9 +99,13 @@ class World
     }
 
     public void Tick() {
-        TickHandlers[tickNumber % TICKS_PER_SECOND].FireTick();
+        TickHandlers[tickIndex].FireTick();
 
         tickNumber++;
+        tickIndex++;
+        if (tickIndex == TICKS_PER_SECOND) {
+            tickIndex = 0;
+        }
     }
 
     public void PopulateFood() {
