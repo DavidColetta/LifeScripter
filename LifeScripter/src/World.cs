@@ -17,7 +17,7 @@ class World
     public int Height => _screenSurface.Surface.Height;
     public TickHandler[] TickHandlers = new TickHandler[TICKS_PER_SECOND];
     public const int TICKS_PER_SECOND = 100;
-    int tickNumber = 0;
+    public int tickNumber{get; private set;} = 0;
     int tickIndex = 0;
 
     public event EventHandler? OnScreenUpdate;

@@ -111,8 +111,8 @@ internal class RootScreen: ScreenObject
         timeControls.Controls.Add(Buttonx100);
         timeControls.Controls.Add(ButtonMax);
 
-        tickDisplaySurface = new ScreenSurface(20, 1);
-        tickDisplaySurface.Position = (Game.Instance.ScreenCellsX - 20, Game.Instance.ScreenCellsY - 1);
+        tickDisplaySurface = new ScreenSurface(20, 2);
+        tickDisplaySurface.Position = (Game.Instance.ScreenCellsX - 20, Game.Instance.ScreenCellsY - 2);
 
         Children.Add(tickDisplaySurface);
         Children.Add(timeControls);
@@ -178,6 +178,8 @@ internal class RootScreen: ScreenObject
         string tpsText = realTPSEstimate + " TPS";
         tickDisplaySurface.Clear();
         tickDisplaySurface.Print(20 - tpsText.Length, 0, tpsText, Color.Black);
+        string currentTickText = _map.tickNumber + " Ticks";
+        tickDisplaySurface.Print(20 - currentTickText.Length, 1, currentTickText, Color.Black);
             
         if (timeSinceLastTPSUpdate >= 1) {
             tickStartTime = DateTime.Now.TimeOfDay;
