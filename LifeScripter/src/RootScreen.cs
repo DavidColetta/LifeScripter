@@ -117,15 +117,9 @@ internal class RootScreen: ScreenObject
         Children.Add(tickDisplaySurface);
         Children.Add(timeControls);
 
-        Game.Instance.FrameUpdate += (sender, e) => {
-            if (DateTime.Now.TimeOfDay - tickStartTime >= TimeSpan.FromSeconds(1)) {
-                tickStartTime = DateTime.Now.TimeOfDay;
-                string tpsText = realTicksPerSecond + " TPS";
-                tickDisplaySurface.Clear();
-                tickDisplaySurface.Print(20 - tpsText.Length, 0, tpsText, Color.Black);
-                realTicksPerSecond = 0;
-            }
-            
+        Game.Instance.FrameUpdate += (sender, e) => {     
+            UpdateTPSCounter();
+
             // System.Diagnostics.Debug.WriteLine("Frame Update");
             if (timeStep == 0) {
                 return;
@@ -176,6 +170,19 @@ internal class RootScreen: ScreenObject
         }
         realTicksPerSecond = 0;
         tickStartTime = DateTime.Now.TimeOfDay;
+    }
+
+    public void UpdateTPSCounter() {
+        double timeSinceLastTPSUpdate = DateTime.Now.TimeOfDay.TotalSeconds - tickStartTime.TotalSeconds;
+        int realTPSEstimate = (int)Math.Ceiling(realTicksPerSecond / timeSinceLastTPSUpdate);
+        string tpsText = realTPSEstimate + " TPS";
+        tickDisplaySurface.Clear();
+        tickDisplaySurface.Print(20 - tpsText.Length, 0, tpsText, Color.Black);
+            
+        if (timeSinceLastTPSUpdate >= 1) {
+            tickStartTime = DateTime.Now.TimeOfDay;
+            realTicksPerSecond = 0;
+        }
     }
     
     public override bool ProcessMouse(MouseScreenObjectState state)
