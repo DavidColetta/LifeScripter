@@ -6,5 +6,12 @@ class Food : WorldObject
     {
         Nutrition = nutrition;
         IsAlive = true;
+
+        world.FoodQuantity++;
+    }
+
+    public override void Die() {
+        base.Die();
+        World.FoodQuantity--;
     }
 }

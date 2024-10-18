@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using MoonSharp.Interpreter;
 using SadConsole.Entities;
 
@@ -16,11 +17,13 @@ class World
     public int Width => _screenSurface.Surface.Width;
     public int Height => _screenSurface.Surface.Height;
     public TickHandler[] TickHandlers = new TickHandler[TICKS_PER_SECOND];
-    public const int TICKS_PER_SECOND = 100;
+    public const int TICKS_PER_SECOND = 60;
     public int tickNumber{get; private set;} = 0;
-    int tickIndex = 0;
-
+    public List<WorldStepData> Data;
     public event EventHandler? OnScreenUpdate;
+    public delegate void StepHandler();
+    public event StepHandler? OnStep; 
+    public int FoodQuantity { get; set; }
 
     public World(int mapWidth, int mapHeight)
     {
@@ -32,6 +35,7 @@ class World
         FillBackground();
 
         grid = new WorldObject[mapWidth, mapHeight];
+        Data = new List<WorldStepData>();
 
         for (int i = 0; i < TICKS_PER_SECOND; i++)
         {
@@ -99,12 +103,13 @@ class World
     }
 
     public void Tick() {
+        int tickIndex = tickNumber % TICKS_PER_SECOND;
         TickHandlers[tickIndex].FireTick();
 
         tickNumber++;
-        tickIndex++;
-        if (tickIndex == TICKS_PER_SECOND) {
-            tickIndex = 0;
+        if (tickIndex == 0) {
+            Data.Add(new WorldStepData(this));
+            OnStep?.Invoke();
         }
     }
 

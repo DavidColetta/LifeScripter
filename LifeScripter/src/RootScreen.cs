@@ -8,7 +8,7 @@ namespace LifeScripter.Scenes;
 
 internal class RootScreen: ScreenObject
 {
-    private readonly World _map;
+    private readonly World _world;
     double time;
     object _timeLock = new();
     double timeStep = 0;
@@ -18,6 +18,8 @@ internal class RootScreen: ScreenObject
 
     Point startDragPosition;
     int dragSpeed = 1;
+
+    readonly ChartDisplay chartDisplay;
 
     readonly ControlsConsole timeControls;
 
@@ -30,15 +32,19 @@ internal class RootScreen: ScreenObject
     public RootScreen()
     {
         //Map
-        _map = new World(360, 240);
-        Children.Add(_map.SurfaceObject);
+        _world = new World(120, 90);
+        Children.Add(_world.SurfaceObject);
 
-        screenCenter = new Point(Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY) * _map.SurfaceObject.FontSize / 2;
+        chartDisplay = new ChartDisplay(Game.Instance.ScreenCellsX - (2*ChartDisplay.BORDER_MARGIN), Game.Instance.ScreenCellsY - (3*ChartDisplay.BORDER_MARGIN), _world);
+        Children.Add(chartDisplay.SurfaceObject);
+
+        screenCenter = new Point(Game.Instance.ScreenCellsX, Game.Instance.ScreenCellsY) * _world.SurfaceObject.FontSize / 2;
         startDragPosition = screenCenter;
 
         //Time Controls
         timeControls = new ControlsConsole(34, 3);
         timeControls.Position = ((Game.Instance.ScreenCellsX / 2) - ((timeControls.Width+1) / 2), Game.Instance.ScreenCellsY - 3);
+        timeControls.FocusOnMouseClick = false;
         RadioBoxButton pauseButton = new(4, 3)
         {
             GroupName = "TimeStep",
@@ -158,7 +164,7 @@ internal class RootScreen: ScreenObject
                 }
                 
                 Interlocked.Increment(ref realTicksPerSecond);
-                _map.Tick();
+                _world.Tick();
             }
         }
     }
@@ -178,13 +184,17 @@ internal class RootScreen: ScreenObject
         string tpsText = realTPSEstimate + " TPS";
         tickDisplaySurface.Clear();
         tickDisplaySurface.Print(20 - tpsText.Length, 0, tpsText, Color.Black);
-        string currentTickText = _map.tickNumber + " Ticks";
+        string currentTickText = _world.tickNumber + " Ticks";
         tickDisplaySurface.Print(20 - currentTickText.Length, 1, currentTickText, Color.Black);
             
         if (timeSinceLastTPSUpdate >= 1) {
             tickStartTime = DateTime.Now.TimeOfDay;
             realTicksPerSecond = 0;
         }
+    }
+
+    public void ToggleChartView() {
+        chartDisplay.SurfaceObject.IsVisible = !chartDisplay.SurfaceObject.IsVisible;
     }
     
     public override bool ProcessMouse(MouseScreenObjectState state)
@@ -195,14 +205,14 @@ internal class RootScreen: ScreenObject
             // dragSpeed -= state.Mouse.ScrollWheelValueChange / 120;
             // dragSpeed = Math.Max(1, dragSpeed);
 
-            Point newFontSize = _map.SurfaceObject.FontSize - state.Mouse.ScrollWheelValueChange / 120;
+            Point newFontSize = _world.SurfaceObject.FontSize - state.Mouse.ScrollWheelValueChange / 120;
             if (newFontSize.X > 0 && newFontSize.Y > 0) {
-                Point positionBefore = state.Mouse.ScreenPosition / _map.SurfaceObject.FontSize;
-                _map.SurfaceObject.FontSize -= state.Mouse.ScrollWheelValueChange / 120;
-                Point positionAfter = state.Mouse.ScreenPosition / _map.SurfaceObject.FontSize;
+                Point positionBefore = state.Mouse.ScreenPosition / _world.SurfaceObject.FontSize;
+                _world.SurfaceObject.FontSize -= state.Mouse.ScrollWheelValueChange / 120;
+                Point positionAfter = state.Mouse.ScreenPosition / _world.SurfaceObject.FontSize;
 
                 //Move the screen to keep the mouse in the same position
-                _map.MoveScreen(positionAfter - positionBefore);
+                _world.MoveScreen(positionAfter - positionBefore);
 
                 handled = true;
             }
@@ -217,9 +227,9 @@ internal class RootScreen: ScreenObject
             }
 
             Point positionChange = state.Mouse.ScreenPosition - startDragPosition;
-            Point screenPositionChange = positionChange / _map.SurfaceObject.FontSize;
+            Point screenPositionChange = positionChange / _world.SurfaceObject.FontSize;
             if (screenPositionChange != Point.Zero) {
-                _map.MoveScreen(screenPositionChange * dragSpeed);
+                _world.MoveScreen(screenPositionChange * dragSpeed);
 
                 //Move the mouse to center of screen using MonoGame
                 Microsoft.Xna.Framework.Input.Mouse.SetPosition(startDragPosition.X, startDragPosition.Y);
@@ -237,26 +247,30 @@ internal class RootScreen: ScreenObject
     public override bool ProcessKeyboard(Keyboard keyboard)
     {   
         bool handled = false;
-
-        if (keyboard.IsKeyPressed(Keys.Up))
+        if (keyboard.IsKeyPressed(Keys.G))
         {
-            _map.MoveScreen((0, 1));
+            ToggleChartView();
+            handled = true;
+        }
+        else if (keyboard.IsKeyPressed(Keys.Up))
+        {
+            _world.MoveScreen((0, 1));
             handled = true;
         }
         else if (keyboard.IsKeyPressed(Keys.Down))
         {
-            _map.MoveScreen((0, -1));
+            _world.MoveScreen((0, -1));
             handled = true;
         }
 
         if (keyboard.IsKeyPressed(Keys.Left))
         {
-            _map.MoveScreen((1, 0));
+            _world.MoveScreen((1, 0));
             handled = true;
         }
         else if (keyboard.IsKeyPressed(Keys.Right))
         {
-            _map.MoveScreen((-1, 0));
+            _world.MoveScreen((-1, 0));
             handled = true;
         }
 
