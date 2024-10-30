@@ -32,7 +32,7 @@ internal class RootScreen: ScreenObject
     public RootScreen()
     {
         //Map
-        _world = new World(120, 90);
+        _world = new World(250, 200);
         Children.Add(_world.SurfaceObject);
 
         chartDisplay = new ChartDisplay(Game.Instance.ScreenCellsX - (2*ChartDisplay.BORDER_MARGIN), Game.Instance.ScreenCellsY - (3*ChartDisplay.BORDER_MARGIN), _world);

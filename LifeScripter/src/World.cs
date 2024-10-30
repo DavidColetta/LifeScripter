@@ -23,7 +23,7 @@ class World
     public event EventHandler? OnScreenUpdate;
     public delegate void StepHandler();
     public event StepHandler? OnStep; 
-    public int FoodQuantity { get; set; }
+    public readonly WorldStepData currentStepData;
 
     public World(int mapWidth, int mapHeight)
     {
@@ -36,20 +36,21 @@ class World
 
         grid = new WorldObject[mapWidth, mapHeight];
         Data = new List<WorldStepData>();
+        currentStepData = new WorldStepData(tickNumber, 0, 0, new Dictionary<string, int>());
 
         for (int i = 0; i < TICKS_PER_SECOND; i++)
         {
             TickHandlers[i] = new TickHandler();
         }
 
-        Script testScript = new Script();
-        try {
-            testScript.LoadFile("scripts\\findFood.lua", null, "slowHai");
-        } catch (SyntaxErrorException e) {
-            Debug.WriteLine(e.DecoratedMessage);
-        }
-        Cell testCell = new Cell(testScript, _screenSurface.Surface.Area.Center + (0, -10), this);
-        SpawnCellEntity(testCell);
+        // Script testScript = new Script();
+        // try {
+        //     testScript.LoadFile("scripts\\findFood.lua", null, "slowHai");
+        // } catch (SyntaxErrorException e) {
+        //     Debug.WriteLine(e.DecoratedMessage);
+        // }
+        // Cell testCell = new Cell(testScript, _screenSurface.Surface.Area.Center + (0, -10), this);
+        // SpawnCellEntity(testCell);
 
         Script scriptCharge = new Script();
         try {
@@ -59,13 +60,13 @@ class World
         }
         SpawnCellEntity(new Cell(scriptCharge, _screenSurface.Surface.Area.Center + (0, 10), this));
 
-        Script scriptCharge2 = new Script();
-        try {
-            scriptCharge2.LoadFile("scripts\\findFoodCharge2.lua", null);
-        } catch (SyntaxErrorException e) {
-            Debug.WriteLine(e.DecoratedMessage);
-        }
-        SpawnCellEntity(new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this));
+        // Script scriptCharge2 = new Script();
+        // try {
+        //     scriptCharge2.LoadFile("scripts\\findFoodCharge2.lua", null);
+        // } catch (SyntaxErrorException e) {
+        //     Debug.WriteLine(e.DecoratedMessage);
+        // }
+        // SpawnCellEntity(new Cell(scriptCharge2, _screenSurface.Surface.Area.Center + (10, 0), this));
 
         //Spawn food
         PopulateFood(0.01);

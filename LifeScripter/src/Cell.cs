@@ -11,8 +11,8 @@ partial class Cell : WorldObject
     //SadConsole variables
     public readonly ColoredGlyph Appearance;
     //Cell variables
-    static readonly int SIGHT_DISTANCE = 14;
-    static readonly int MAX_ENERGY = 300;
+    static readonly int SIGHT_DISTANCE = 200;
+    static readonly int MAX_ENERGY = 150;
     bool exhausted = true;
     int energy = MAX_ENERGY;
 
@@ -31,6 +31,12 @@ partial class Cell : WorldObject
         memory.RegisterCoreModules(CoreModules.Preset_SoftSandbox);//This could cause problems with Reload
         RegisterCellFunctions();
 
+        world.currentStepData.TotalPopulation++;
+        if (world.currentStepData.Populations.ContainsKey(script.GetSourceCode(1).Name))
+            world.currentStepData.Populations[script.GetSourceCode(1).Name]++;
+        else
+            world.currentStepData.Populations[script.GetSourceCode(1).Name] = 1;
+
         SubscribeToTicks();
 
         DynValue scriptCallback;
@@ -38,10 +44,12 @@ partial class Cell : WorldObject
             scriptCallback = script.Reload(memory);
         } catch (SyntaxErrorException e) {
             Debug.WriteLine("Syntax error in script reload: " + e.Source + " " + e.DecoratedMessage);
+            Die();
             return;
         }
         if (scriptCallback.Type != DataType.Function) {
             Debug.WriteLine("Script reload did not return a closure (this should never happen)");
+            Die();
             return;
         }
         behavior = scriptCallback.Function;
@@ -100,12 +108,17 @@ partial class Cell : WorldObject
     public override void Die() {
         if (!IsDead) {
             UnsubscribeFromTicks(TicksPerSecond);
+            World.currentStepData.Populations[script.GetSourceCode(1).Name]--;
+            World.currentStepData.TotalPopulation--;
         }
         base.Die();
     }
 
     public static ColoredGlyph GetAppearanceFromHashedScript(Script s) {
-        uint hashCode = SemiStableHashCode(s.GetSourceCode(1).Name);
+        return GetHashedAppearance(s.GetSourceCode(1).Code);
+    }
+    public static ColoredGlyph GetHashedAppearance(string name) {
+        uint hashCode = SemiStableHashCode(name);
         //uint hashCode = SemiStableHashCode(s.GetSourceCode(1).Code);
         // System.Console.WriteLine(hashCode);
         int glyph = (int)((hashCode % 143) + 1);

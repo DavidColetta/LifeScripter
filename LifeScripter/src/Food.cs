@@ -7,11 +7,13 @@ class Food : WorldObject
         Nutrition = nutrition;
         IsAlive = true;
 
-        world.FoodQuantity++;
+        world.currentStepData.FoodQuantity++;
     }
 
     public override void Die() {
+        if (!IsDead) {
+            World.currentStepData.FoodQuantity--;
+        }
         base.Die();
-        World.FoodQuantity--;
     }
 }
